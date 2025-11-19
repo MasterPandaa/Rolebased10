@@ -1,9 +1,8 @@
-import sys
 import random
+import sys
 from dataclasses import dataclass
 
 import pygame
-
 
 # Window configuration
 WIDTH, HEIGHT = 800, 600
@@ -66,12 +65,14 @@ class AIPaddle(Paddle):
         super().__init__(x, y, width, height, speed)
         # AI parameters tuned to be challenging but beatable
         self.reaction_delay = 0.10  # seconds before adjusting target
-        self.error_margin = 18      # pixels of target jitter
-        self.track_smooth = 0.18    # lerp factor toward target per update
+        self.error_margin = 18  # pixels of target jitter
+        self.track_smooth = 0.18  # lerp factor toward target per update
         self._time_since_react = 0.0
         self._target_y = float(self.rect.centery)
 
-    def _predict_target(self, ball_rect: pygame.Rect, ball_vel: pygame.Vector2, bounds: Bounds) -> float:
+    def _predict_target(
+        self, ball_rect: pygame.Rect, ball_vel: pygame.Vector2, bounds: Bounds
+    ) -> float:
         # Basic prediction: where ball will be when it reaches AI x, with wall bounces
         if ball_vel.x <= 0:
             # Ball moving away; drift back to center slowly
@@ -96,7 +97,13 @@ class AIPaddle(Paddle):
         jitter = random.uniform(-self.error_margin, self.error_margin)
         return predicted_y + jitter
 
-    def update_ai(self, dt: float, ball_rect: pygame.Rect, ball_vel: pygame.Vector2, bounds: Bounds) -> None:
+    def update_ai(
+        self,
+        dt: float,
+        ball_rect: pygame.Rect,
+        ball_vel: pygame.Vector2,
+        bounds: Bounds,
+    ) -> None:
         self._time_since_react += dt
         if self._time_since_react >= self.reaction_delay:
             self._time_since_react = 0.0
@@ -134,7 +141,9 @@ class Ball:
         self.velocity = direction.normalize() * self.speed
         self.serve_cooldown = COUNTDOWN_TIME
 
-    def update(self, dt_ms: float, bounds: Bounds, paddles: tuple[Paddle, Paddle]) -> int | None:
+    def update(
+        self, dt_ms: float, bounds: Bounds, paddles: tuple[Paddle, Paddle]
+    ) -> int | None:
         # Returns: None for no score, 0 if left scores, 1 if right scores
         if self.serve_cooldown > 0:
             self.serve_cooldown -= int(dt_ms)
@@ -182,7 +191,7 @@ class Ball:
             self.rect.right = paddle.rect.left
 
         # Compute bounce angle based on hit position (relative to paddle center)
-        offset = (self.rect.centery - paddle.rect.centery)
+        offset = self.rect.centery - paddle.rect.centery
         norm = offset / (paddle.rect.height / 2)
         norm = max(-1.0, min(1.0, norm))
 
@@ -248,9 +257,13 @@ class Game:
 
         self.handle_input()
         self.left_paddle.update(self._dt_px(dt_ms), self.bounds)
-        self.right_paddle.update_ai(self._dt_px(dt_ms), self.ball.rect, self.ball.velocity, self.bounds)
+        self.right_paddle.update_ai(
+            self._dt_px(dt_ms), self.ball.rect, self.ball.velocity, self.bounds
+        )
 
-        scored = self.ball.update(dt_ms, self.bounds, (self.left_paddle, self.right_paddle))
+        scored = self.ball.update(
+            dt_ms, self.bounds, (self.left_paddle, self.right_paddle)
+        )
         if scored is not None:
             self.score[scored] += 1
             if self.score[scored] >= SCORE_TO_WIN:
@@ -263,7 +276,9 @@ class Game:
         gap = 16
         x = WIDTH // 2 - 2
         for y in range(0, HEIGHT, seg_h + gap):
-            pygame.draw.rect(self.screen, GREY, pygame.Rect(x, y, 4, seg_h), border_radius=2)
+            pygame.draw.rect(
+                self.screen, GREY, pygame.Rect(x, y, 4, seg_h), border_radius=2
+            )
 
     def draw_hud(self) -> None:
         left = self.font_score.render(str(self.score[0]), True, WHITE)
@@ -274,13 +289,19 @@ class Game:
         if self.ball.serve_cooldown > 0 and self.winner is None:
             secs = max(0, int(self.ball.serve_cooldown / 400) + 1)
             text = self.font_small.render(f"Serve in {secs}", True, GREY)
-            self.screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 60))
+            self.screen.blit(
+                text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 60)
+            )
 
         if self.winner is not None:
             msg = f"Player {'Left' if self.winner == 0 else 'Right'} Wins!"
             text = self.font_score.render(msg, True, WHITE)
-            sub = self.font_small.render("Press R to restart or ESC to quit", True, GREY)
-            self.screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 40))
+            sub = self.font_small.render(
+                "Press R to restart or ESC to quit", True, GREY
+            )
+            self.screen.blit(
+                text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 40)
+            )
             self.screen.blit(sub, (WIDTH // 2 - sub.get_width() // 2, HEIGHT // 2 + 20))
 
     def _dt_px(self, dt_ms: float) -> float:
